@@ -16,7 +16,25 @@ cd "drug - Copy"
 Press Enter
 
 
-STEP 3: Start the Application
+STEP 3: Setup Databases (FIRST TIME ONLY)
+----------------------------
+If this is your FIRST TIME running the app, type these commands:
+
+npm install
+
+Press Enter and wait for it to finish.
+
+Then run these setup commands:
+
+node setup_verification_database.js
+node setup_tracking_database.js
+
+You should see success messages.
+
+✓ This step is only needed ONCE!
+
+
+STEP 4: Start the Application
 ----------------------------
 Type this exactly:
 
@@ -26,11 +44,14 @@ Press Enter
 
 You should see:
 "Server running on http://localhost:3000"
+"Connected to SQLite database"
+"Connected to verification database"
+"Connected to tracking database"
 
 ✓ KEEP THIS WINDOW OPEN!
 
 
-STEP 4: Open Browser
+STEP 5: Open Browser
 ----------------------------
 Open Chrome, Firefox, or Edge
 
@@ -41,7 +62,7 @@ Email: test@example.com
 Password: password123
 
 
-STEP 5: Test Barcode Verification
+STEP 6: Test Barcode Verification
 ----------------------------
 1. Click "Verification" in menu
 
@@ -53,7 +74,7 @@ SCAN001  (should be valid)
 CERT003  (should be expired)
 
 
-STEP 6: Test Order Tracking
+STEP 7: Test Order Tracking
 ----------------------------
 1. Click "Tracking" in menu
 
@@ -64,7 +85,7 @@ ORD002    (out for delivery)
 TRACK001  (shipped)
 
 
-STEP 7: Run Test Scripts (IMPORTANT!)
+STEP 8: Run Test Scripts (IMPORTANT!)
 ----------------------------
 Open a NEW command prompt window
 (Keep the first one running!)
@@ -91,7 +112,7 @@ Test order tracking only:
 node test_tracking.js
 
 
-STEP 8: Stop the Server (When Done)
+STEP 9: Stop the Server (When Done)
 ----------------------------
 In the FIRST command window, press: Ctrl + C
 
@@ -99,6 +120,12 @@ In the FIRST command window, press: Ctrl + C
 ===============================================
            QUICK COMMAND SUMMARY
 ===============================================
+
+FIRST TIME SETUP (Run once):
+1. cd "drug - Copy"
+2. npm install
+3. node setup_verification_database.js
+4. node setup_tracking_database.js
 
 WINDOW 1 (Server):
 1. cd "drug - Copy"

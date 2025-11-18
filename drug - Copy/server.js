@@ -32,6 +32,13 @@ const verificationDb = new sqlite3.Database('verification.db', (err) => {
         console.error('Error connecting to verification database:', err);
     } else {
         console.log('Connected to verification database');
+        // Auto-initialize verification database if empty
+        verificationDb.get("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='certifications'", (err, row) => {
+            if (!err && row.count === 0) {
+                console.log('Initializing verification database...');
+                initializeVerificationDb();
+            }
+        });
     }
 });
 
@@ -40,8 +47,116 @@ const trackingDb = new sqlite3.Database('tracking.db', (err) => {
         console.error('Error connecting to tracking database:', err);
     } else {
         console.log('Connected to tracking database');
+        // Auto-initialize tracking database if empty
+        trackingDb.get("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='orders'", (err, row) => {
+            if (!err && row.count === 0) {
+                console.log('Initializing tracking database...');
+                initializeTrackingDb();
+            }
+        });
     }
 });
+
+// Auto-initialization functions
+function initializeVerificationDb() {
+    verificationDb.run(`CREATE TABLE IF NOT EXISTS certifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        issueDate TEXT NOT NULL,
+        expiryDate TEXT NOT NULL,
+        status TEXT NOT NULL,
+        productName TEXT,
+        batchNumber TEXT,
+        manufacturer TEXT
+    )`, (err) => {
+        if (err) {
+            console.error("Error creating certifications table:", err.message);
+            return;
+        }
+
+        const testCertifications = [
+            { code: 'CERT001', issueDate: '2025-01-15', expiryDate: '2026-01-15', status: 'Valid', productName: 'Paracetamol 500mg', batchNumber: 'BATCH2025001', manufacturer: 'PharmaCorp Inc.' },
+            { code: 'CERT002', issueDate: '2025-02-20', expiryDate: '2026-02-20', status: 'Valid', productName: 'Amoxicillin 250mg', batchNumber: 'BATCH2025002', manufacturer: 'MediLife Ltd.' },
+            { code: 'CERT003', issueDate: '2024-03-10', expiryDate: '2025-03-10', status: 'Expired', productName: 'Ibuprofen 200mg', batchNumber: 'BATCH2024003', manufacturer: 'HealthCare Solutions' },
+            { code: 'QR12345', issueDate: '2025-06-01', expiryDate: '2026-06-01', status: 'Valid', productName: 'Aspirin 100mg', batchNumber: 'BATCH2025004', manufacturer: 'Global Pharma' },
+            { code: 'SCAN001', issueDate: '2025-07-15', expiryDate: '2026-07-15', status: 'Valid', productName: 'Vitamin C 1000mg', batchNumber: 'BATCH2025005', manufacturer: 'NutriMed Inc.' }
+        ];
+
+        const stmt = verificationDb.prepare(`INSERT OR IGNORE INTO certifications (code, issueDate, expiryDate, status, productName, batchNumber, manufacturer) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+        testCertifications.forEach(cert => {
+            stmt.run([cert.code, cert.issueDate, cert.expiryDate, cert.status, cert.productName, cert.batchNumber, cert.manufacturer]);
+        });
+        stmt.finalize(() => {
+            console.log('✓ Verification database initialized with test data');
+        });
+    });
+}
+
+function initializeTrackingDb() {
+    trackingDb.serialize(() => {
+        trackingDb.run(`CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            orderId TEXT UNIQUE NOT NULL,
+            status TEXT NOT NULL,
+            status_code INTEGER NOT NULL,
+            customerName TEXT NOT NULL,
+            productName TEXT NOT NULL,
+            quantity INTEGER NOT NULL,
+            orderDate TEXT NOT NULL
+        )`, (err) => {
+            if (err) {
+                console.error("Error creating orders table:", err.message);
+                return;
+            }
+        });
+
+        trackingDb.run(`CREATE TABLE IF NOT EXISTS tracking_details (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            orderId TEXT NOT NULL,
+            status TEXT NOT NULL,
+            location TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            description TEXT
+        )`, (err) => {
+            if (err) {
+                console.error("Error creating tracking_details table:", err.message);
+                return;
+            }
+        });
+
+        const testOrders = [
+            { orderId: 'ORD001', status: 'Delivered', status_code: 4, customerName: 'John Doe', productName: 'Paracetamol 500mg', quantity: 100, orderDate: '2025-01-10' },
+            { orderId: 'ORD002', status: 'Out for Delivery', status_code: 3, customerName: 'Jane Smith', productName: 'Amoxicillin 250mg', quantity: 50, orderDate: '2025-01-15' },
+            { orderId: 'TRACK001', status: 'Shipped', status_code: 2, customerName: 'Bob Johnson', productName: 'Ibuprofen 200mg', quantity: 75, orderDate: '2025-01-18' }
+        ];
+
+        const orderStmt = trackingDb.prepare(`INSERT OR IGNORE INTO orders (orderId, status, status_code, customerName, productName, quantity, orderDate) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+        testOrders.forEach(order => {
+            orderStmt.run([order.orderId, order.status, order.status_code, order.customerName, order.productName, order.quantity, order.orderDate]);
+        });
+        orderStmt.finalize();
+
+        const testDetails = [
+            { orderId: 'ORD001', status: 'Order Placed', location: 'Warehouse A', timestamp: '2025-01-10 10:00:00', description: 'Order received and processing started' },
+            { orderId: 'ORD001', status: 'Shipped', location: 'Distribution Center', timestamp: '2025-01-11 14:30:00', description: 'Package dispatched from warehouse' },
+            { orderId: 'ORD001', status: 'Out for Delivery', location: 'Local Hub', timestamp: '2025-01-12 08:00:00', description: 'Out for delivery to customer' },
+            { orderId: 'ORD001', status: 'Delivered', location: 'Customer Address', timestamp: '2025-01-12 16:45:00', description: 'Successfully delivered to customer' },
+            { orderId: 'ORD002', status: 'Order Placed', location: 'Warehouse B', timestamp: '2025-01-15 09:15:00', description: 'Order received and processing started' },
+            { orderId: 'ORD002', status: 'Shipped', location: 'Distribution Center', timestamp: '2025-01-16 11:20:00', description: 'Package dispatched from warehouse' },
+            { orderId: 'ORD002', status: 'Out for Delivery', location: 'Local Hub', timestamp: '2025-01-17 07:30:00', description: 'Out for delivery to customer' },
+            { orderId: 'TRACK001', status: 'Order Placed', location: 'Warehouse A', timestamp: '2025-01-18 13:00:00', description: 'Order received and processing started' },
+            { orderId: 'TRACK001', status: 'Shipped', location: 'Distribution Center', timestamp: '2025-01-19 10:45:00', description: 'Package dispatched from warehouse' }
+        ];
+
+        const detailsStmt = trackingDb.prepare(`INSERT OR IGNORE INTO tracking_details (orderId, status, location, timestamp, description) VALUES (?, ?, ?, ?, ?)`);
+        testDetails.forEach(detail => {
+            detailsStmt.run([detail.orderId, detail.status, detail.location, detail.timestamp, detail.description]);
+        });
+        detailsStmt.finalize(() => {
+            console.log('✓ Tracking database initialized with test data');
+        });
+    });
+}
 
 // Routes
 app.get('/', (req, res) => {
