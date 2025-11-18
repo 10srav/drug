@@ -1,0 +1,115 @@
+===============================================
+    HOW TO RUN TEST SCRIPTS
+===============================================
+
+IMPORTANT: Server must be running first!
+
+STEP 1: Start Server (First Window)
+----------------------------
+Open Command Prompt
+
+cd "drug - Copy"
+node server.js
+
+✓ Keep this window open!
+
+
+STEP 2: Run Tests (Second Window)
+----------------------------
+Open a NEW Command Prompt window
+
+cd "drug - Copy"
+
+
+Option A - Run ALL Tests:
+--------------------------
+node run_all_tests.js
+
+You should see:
+✓ Barcode Scanning Verification Tests: 6/6 passed
+✓ Order Tracking Tests: 7/7 passed
+🎉 ALL TESTS PASSED!
+Success Rate: 100.00%
+
+
+Option B - Run Individual Tests:
+---------------------------------
+
+Test Verification Only:
+node test_verification.js
+
+Expected: 6/6 tests passed
+
+
+Test Tracking Only:
+node test_tracking.js
+
+Expected: 7/7 tests passed
+
+
+===============================================
+         WHAT THE TESTS CHECK
+===============================================
+
+Verification Tests Check:
+-------------------------
+✓ Valid certification codes work
+✓ Expired codes are rejected
+✓ Invalid codes are rejected
+✓ QR code scanning works
+✓ Empty codes are handled
+✓ Database connection works
+
+Tracking Tests Check:
+--------------------
+✓ Delivered orders can be tracked
+✓ In-transit orders can be tracked
+✓ Order status progress bar works
+✓ Invalid order IDs are handled
+✓ Empty order IDs are handled
+✓ Tracking history displays correctly
+
+
+===============================================
+         TROUBLESHOOTING
+===============================================
+
+Error: "Server is not running"
+------------------------------
+Solution: Start the server in the first window
+cd "drug - Copy"
+node server.js
+
+
+Error: "Cannot find module"
+----------------------------
+Solution: Install dependencies
+cd "drug - Copy"
+npm install
+
+
+Tests Failed?
+-------------
+Check if:
+1. Server is running (window 1)
+2. Port 3000 is available
+3. Databases exist (verification.db, tracking.db)
+
+
+===============================================
+           QUICK REFERENCE
+===============================================
+
+WINDOW 1:
+cd "drug - Copy"
+node server.js
+(Keep running)
+
+WINDOW 2:
+cd "drug - Copy"
+node run_all_tests.js
+(Run tests)
+
+Expected: 13/13 tests passed ✓
+
+===============================================

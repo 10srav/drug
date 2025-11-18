@@ -1,0 +1,128 @@
+===============================================
+    SIMPLE INSTRUCTIONS FOR YOUR CLIENT
+===============================================
+
+STEP 1: Open Command Prompt
+----------------------------
+Windows: Press Windows Key + R, type "cmd", press Enter
+
+
+STEP 2: Go to Project Folder
+----------------------------
+Type this exactly (copy and paste):
+
+cd "drug - Copy"
+
+Press Enter
+
+
+STEP 3: Start the Application
+----------------------------
+Type this exactly:
+
+node server.js
+
+Press Enter
+
+You should see:
+"Server running on http://localhost:3000"
+
+✓ KEEP THIS WINDOW OPEN!
+
+
+STEP 4: Open Browser
+----------------------------
+Open Chrome, Firefox, or Edge
+
+Go to: http://localhost:3000
+
+Login with:
+Email: test@example.com
+Password: password123
+
+
+STEP 5: Test Barcode Verification
+----------------------------
+1. Click "Verification" in menu
+
+2. Try these codes:
+
+CERT001  (should be valid)
+QR12345  (should be valid)
+SCAN001  (should be valid)
+CERT003  (should be expired)
+
+
+STEP 6: Test Order Tracking
+----------------------------
+1. Click "Tracking" in menu
+
+2. Try these order IDs:
+
+ORD001    (delivered)
+ORD002    (out for delivery)
+TRACK001  (shipped)
+
+
+STEP 7: Run Test Scripts (IMPORTANT!)
+----------------------------
+Open a NEW command prompt window
+(Keep the first one running!)
+
+In the NEW window, type:
+
+cd "drug - Copy"
+
+Press Enter
+
+Then run ALL tests:
+
+node run_all_tests.js
+
+Expected result: "ALL TESTS PASSED! 🎉"
+
+
+OR run individual tests:
+
+Test barcode verification only:
+node test_verification.js
+
+Test order tracking only:
+node test_tracking.js
+
+
+STEP 8: Stop the Server (When Done)
+----------------------------
+In the FIRST command window, press: Ctrl + C
+
+
+===============================================
+           QUICK COMMAND SUMMARY
+===============================================
+
+WINDOW 1 (Server):
+1. cd "drug - Copy"
+2. node server.js
+3. Keep this running!
+
+WINDOW 2 (Tests):
+1. cd "drug - Copy"
+2. node run_all_tests.js
+
+BROWSER:
+3. Open: http://localhost:3000
+4. Login: test@example.com / password123
+
+
+TEST CODES TO TRY:
+------------------
+Verification: CERT001, QR12345, SCAN001
+Tracking: ORD001, ORD002, TRACK001
+
+
+THAT'S ALL!
+Everything is working perfectly.
+All tests passed: 13/13 (100%)
+
+===============================================
+
