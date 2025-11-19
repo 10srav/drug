@@ -57,6 +57,14 @@ const trackingDb = new sqlite3.Database('tracking.db', (err) => {
     }
 });
 
+const inventoryDb = new sqlite3.Database('inventory.db', (err) => {
+    if (err) {
+        console.error('Error connecting to inventory database:', err);
+    } else {
+        console.log('Connected to inventory database');
+    }
+});
+
 // Auto-initialization functions
 function initializeVerificationDb() {
     verificationDb.run(`CREATE TABLE IF NOT EXISTS certifications (
@@ -318,6 +326,87 @@ app.get('/api/track_order', (req, res) => {
                 details: details || []
             });
         });
+    });
+});
+
+// API endpoint for inventory - Get all items or search
+app.get('/api/inventory', (req, res) => {
+    const searchTerm = req.query.search || '';
+
+    let query = 'SELECT * FROM inventory';
+    let params = [];
+
+    if (searchTerm) {
+        query += ' WHERE itemName LIKE ? OR category LIKE ?';
+        params = [`%${searchTerm}%`, `%${searchTerm}%`];
+    }
+
+    console.log('Fetching inventory with search term:', searchTerm);
+
+    inventoryDb.all(query, params, (err, items) => {
+        if (err) {
+            console.error('Error fetching inventory:', err);
+            return res.status(500).json({ error: 'Error fetching inventory' });
+        }
+
+        console.log(`Found ${items.length} inventory items`);
+        res.json(items);
+    });
+});
+
+// API endpoint for inventory - Add new item
+app.post('/api/inventory', (req, res) => {
+    const { itemName, quantity, category } = req.body;
+
+    console.log('Adding new inventory item:', { itemName, quantity, category });
+
+    if (!itemName || quantity === undefined || !category) {
+        return res.status(400).json({ error: 'Missing required fields: itemName, quantity, category' });
+    }
+
+    if (typeof quantity !== 'number' || quantity < 0) {
+        return res.status(400).json({ error: 'Quantity must be a non-negative number' });
+    }
+
+    const query = 'INSERT INTO inventory (itemName, quantity, category) VALUES (?, ?, ?)';
+
+    inventoryDb.run(query, [itemName, quantity, category], function(err) {
+        if (err) {
+            console.error('Error adding inventory item:', err);
+            return res.status(500).json({ error: 'Error adding item to inventory' });
+        }
+
+        console.log(`Item added successfully with ID: ${this.lastID}`);
+        res.status(201).json({
+            id: this.lastID,
+            itemName,
+            quantity,
+            category
+        });
+    });
+});
+
+// API endpoint for inventory - Delete item
+app.delete('/api/inventory/:id', (req, res) => {
+    const itemId = req.params.id;
+
+    console.log('Deleting inventory item with ID:', itemId);
+
+    const query = 'DELETE FROM inventory WHERE id = ?';
+
+    inventoryDb.run(query, [itemId], function(err) {
+        if (err) {
+            console.error('Error deleting inventory item:', err);
+            return res.status(500).json({ error: 'Error deleting item' });
+        }
+
+        if (this.changes === 0) {
+            console.log('No item found with ID:', itemId);
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        console.log(`Item deleted successfully, ID: ${itemId}`);
+        res.json({ message: 'Item deleted successfully', id: itemId });
     });
 });
 
