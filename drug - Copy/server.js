@@ -65,6 +65,30 @@ const inventoryDb = new sqlite3.Database('inventory.db', (err) => {
     }
 });
 
+const salesDb = new sqlite3.Database('sales.db', (err) => {
+    if (err) {
+        console.error('Error connecting to sales database:', err);
+    } else {
+        console.log('Connected to sales database');
+    }
+});
+
+const trainingDb = new sqlite3.Database('training_schedule.db', (err) => {
+    if (err) {
+        console.error('Error connecting to training database:', err);
+    } else {
+        console.log('Connected to training database');
+    }
+});
+
+const feedbackDb = new sqlite3.Database('feedback.db', (err) => {
+    if (err) {
+        console.error('Error connecting to feedback database:', err);
+    } else {
+        console.log('Connected to feedback database');
+    }
+});
+
 // Auto-initialization functions
 function initializeVerificationDb() {
     verificationDb.run(`CREATE TABLE IF NOT EXISTS certifications (
@@ -408,6 +432,148 @@ app.delete('/api/inventory/:id', (req, res) => {
         console.log(`Item deleted successfully, ID: ${itemId}`);
         res.json({ message: 'Item deleted successfully', id: itemId });
     });
+});
+
+// API endpoint for sales demand data
+app.get('/api/sales_demand', (req, res) => {
+    console.log('Fetching sales demand data');
+
+    const query = 'SELECT * FROM sales_demand ORDER BY itemName, year, month';
+
+    salesDb.all(query, [], (err, rows) => {
+        if (err) {
+            console.error('Error fetching sales demand:', err);
+            return res.status(500).json({ error: 'Error fetching sales demand data' });
+        }
+
+        // Transform data into format expected by frontend
+        const result = { months: [] };
+        const monthsSet = new Set();
+
+        rows.forEach(row => {
+            monthsSet.add(`${row.year}-${String(row.month).padStart(2, '0')}`);
+
+            if (!result[row.itemName]) {
+                result[row.itemName] = [];
+            }
+            result[row.itemName].push(row.demand);
+        });
+
+        result.months = Array.from(monthsSet).sort();
+
+        console.log(`Fetched sales demand data for ${Object.keys(result).length - 1} items`);
+        res.json(result);
+    });
+});
+
+// API endpoint for booking training sessions
+app.post('/api/book_training', (req, res) => {
+    const { date, time } = req.body;
+
+    console.log('Booking training session:', { date, time });
+
+    if (!date || !time) {
+        return res.status(400).json({
+            success: false,
+            message: 'Date and time are required'
+        });
+    }
+
+    // Note: The database column is named 'text' not 'time'
+    const query = 'INSERT INTO session (date, text) VALUES (?, ?)';
+
+    trainingDb.run(query, [date, time], function(err) {
+        if (err) {
+            console.error('Error booking training session:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'Error booking training session'
+            });
+        }
+
+        console.log(`Training session booked successfully, ID: ${this.lastID}`);
+        res.json({
+            success: true,
+            message: `Training session booked for ${date} at ${time}`,
+            id: this.lastID
+        });
+    });
+});
+
+// API endpoint for submitting feedback
+app.post('/api/submit_feedback', (req, res) => {
+    const { rating, feedback } = req.body;
+
+    console.log('Submitting feedback:', { rating, feedback });
+
+    if (!rating && !feedback) {
+        return res.status(400).json({
+            success: false,
+            message: 'Rating or feedback is required'
+        });
+    }
+
+    const query = 'INSERT INTO feedback (rating, comment, submitted_at) VALUES (?, ?, ?)';
+    const timestamp = new Date().toISOString();
+
+    feedbackDb.run(query, [rating || 0, feedback || '', timestamp], function(err) {
+        if (err) {
+            console.error('Error submitting feedback:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'Error submitting feedback'
+            });
+        }
+
+        console.log(`Feedback submitted successfully, ID: ${this.lastID}`);
+        res.json({
+            success: true,
+            message: 'Thank you for your feedback!',
+            id: this.lastID
+        });
+    });
+});
+
+// API endpoint for chatbot
+app.post('/api/chatbot', (req, res) => {
+    const { message } = req.body;
+
+    console.log('Chatbot received message:', message);
+
+    if (!message) {
+        return res.status(400).json({
+            error: 'Message is required'
+        });
+    }
+
+    // Simple chatbot responses
+    const userMsg = message.toLowerCase();
+    let reply = '';
+
+    if (userMsg.includes('hello') || userMsg.includes('hi') || userMsg.includes('hey')) {
+        reply = 'Hello! How can I assist you with the pharmaceutical management system today?';
+    } else if (userMsg.includes('help')) {
+        reply = 'I can help you with:\n- Inventory management\n- Order tracking\n- Certification verification\n- Sales reports\n- Training schedules\nWhat would you like to know?';
+    } else if (userMsg.includes('inventory')) {
+        reply = 'You can manage your inventory from the Inventory page. Add, update, or remove items, and track stock levels.';
+    } else if (userMsg.includes('tracking') || userMsg.includes('order')) {
+        reply = 'To track an order, go to the Tracking page and enter your order ID. You can see real-time updates on order status.';
+    } else if (userMsg.includes('verification') || userMsg.includes('certificate')) {
+        reply = 'Use the Verification page to scan barcodes or enter certification codes to verify product authenticity.';
+    } else if (userMsg.includes('sales') || userMsg.includes('demand')) {
+        reply = 'Check the Sales page to view demand trends and analyze sales data with interactive charts.';
+    } else if (userMsg.includes('training')) {
+        reply = 'Visit the Training page to view available training sessions and book slots for staff training.';
+    } else if (userMsg.includes('thank')) {
+        reply = "You're welcome! Let me know if you need anything else.";
+    } else if (userMsg.includes('bye') || userMsg.includes('goodbye')) {
+        reply = 'Goodbye! Feel free to return if you have more questions.';
+    } else {
+        reply = 'I understand you need help with: "' + message + '". Could you please provide more details or choose from our main features: Inventory, Tracking, Verification, Sales, or Training?';
+    }
+
+    console.log('Chatbot reply:', reply);
+    res.json({ reply });
 });
 
 // Start server
